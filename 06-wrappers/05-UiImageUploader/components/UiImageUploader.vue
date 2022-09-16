@@ -1,8 +1,12 @@
 <template>
   <div class="image-uploader">
-    <label class="image-uploader__preview image-uploader__preview-loading" style="--bg-url: url('/link.jpeg')">
-      <span class="image-uploader__text">Загрузить изображение</span>
-      <input type="file" accept="image/*" class="image-uploader__input" />
+    <label
+      class="image-uploader__preview"
+      :class="{ 'image-uploader__preview-loading': currentState === $options.uploaderStates.loading }"
+      :style="currImage && `--bg-url: url('${currImage}')`"
+    >
+      <span class="image-uploader__text">{{ currentState.text }}</span>
+      <input type="file" accept="image/*" class="image-uploader__input" ref="input" v-bind="$attrs" @change="changeEvent" @click="clickEvent"  />
     </label>
   </div>
 </template>
@@ -10,6 +14,55 @@
 <script>
 export default {
   name: 'UiImageUploader',
+
+  inheritAttrs: false,
+
+  props: {
+    preview: {
+      type: String,
+    },
+    uploader: {
+      type: Function
+    },
+  },
+
+  data() {
+    return {
+      currentState: this.preview ? this.$options.uploaderStates.filled : this.$options.uploaderStates.empty,
+      selectedImage: null
+    };
+  },
+
+  emits: ['select', 'error', 'upload', 'remove'],
+
+  computed: {
+    currImage() {
+      return this.preview || this.selectedImage;
+    },
+  },
+
+  uploaderStates: {
+    empty: {
+      text: 'Загрузить изображение',
+    },
+    loading: {
+      text: 'Загрузка...',
+    },
+    filled: {
+      text: 'Удалить изображение',
+    },
+  },
+
+  methods: {
+    changeEvent(event) {
+      const localFile = event.target.files[0];
+      this.selectedImage = URL.createObjectURL(localFile);
+      debugger;
+    },
+    clickEvent(event) {
+
+    }
+  },
 };
 </script>
 
