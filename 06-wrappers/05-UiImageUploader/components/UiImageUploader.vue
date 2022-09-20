@@ -2,7 +2,7 @@
   <div class="image-uploader">
     <label
       class="image-uploader__preview"
-      :class="{ 'image-uploader__preview-loading': currentState === $options.uploaderStates.loading }"
+      :class="{ 'image-uploader__preview-loading': currentState.id === $options.uploaderStates.loading.id }"
       :style="currImage && `--bg-url: url('${currImage}')`"
     >
       <span class="image-uploader__text">{{ currentState.text }}</span>
@@ -33,8 +33,6 @@ export default {
     };
   },
 
-  emits: ['select', 'error', 'upload', 'remove'],
-
   computed: {
     currImage() {
       return this.preview || this.selectedImage;
@@ -43,24 +41,60 @@ export default {
 
   uploaderStates: {
     empty: {
+      id: 1,
       text: 'Загрузить изображение',
     },
     loading: {
+      id: 2,
       text: 'Загрузка...',
     },
     filled: {
+      id: 3,
       text: 'Удалить изображение',
     },
   },
 
+  emits: ['select', 'error', 'upload', 'remove'],
+
   methods: {
     changeEvent(event) {
+
       const localFile = event.target.files[0];
       this.selectedImage = URL.createObjectURL(localFile);
-      debugger;
+      this.$emit('select', localFile);
+
+      if (!this.uploader){
+        this.currentState = this.$options.uploaderStates.filled;
+        return;
+      }
+
+      this.currentState = this.$options.uploaderStates.loading;
+
+      return this.uploader(localFile)
+        .then((result) => {
+          this.currentState = this.$options.uploaderStates.filled;
+          this.$emit('upload', result);
+        })
+        .catch((error) => {
+          this.currentState = this.$options.uploaderStates.empty;
+          this.clearFile();
+          this.$emit('error', error);
+        });
     },
     clickEvent(event) {
+      if (this.currentState.id === this.$options.uploaderStates.filled.id){
+        event.preventDefault();
+        this.clearFile();
+        this.currentState = this.$options.uploaderStates.empty;
+        this.$emit('remove');
+      }
 
+      if (this.currentState.id === this.$options.uploaderStates.loading.id)
+        event.preventDefault();
+    },
+    clearFile(){
+      this.selectedImage = null;
+      this.$refs.input.value = '';
     }
   },
 };
